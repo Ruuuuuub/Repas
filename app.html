@@ -1,0 +1,667 @@
+<title>Mes dîners malins</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout : une colonne façon carnet de courses, onglets collés en haut, cartes "dîner" en liste. */
+:root {
+  --bg: #f3f6f1;
+  --surface: #ffffff;
+  --ink: #1b2a1f;
+  --muted: #5d6b60;
+  --line: #dbe3d8;
+  --basil: #2f7d4a;
+  --basil-soft: #e1f0e5;
+  --mustard: #e3a92b;
+  --mustard-soft: #fbf0d4;
+  --danger: #b4432f;
+  --danger-soft: #f8e2dc;
+  --shadow: 0 1px 2px rgba(27, 42, 31, .06), 0 4px 14px rgba(27, 42, 31, .06);
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111813; --surface: #1a231d; --ink: #e8efe9; --muted: #9eaba1; --line: #2b372f;
+    --basil: #6cc28a; --basil-soft: #1f3527; --mustard: #f0bd4f; --mustard-soft: #3a3020;
+    --danger: #f08a73; --danger-soft: #3d2420; --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111813; --surface: #1a231d; --ink: #e8efe9; --muted: #9eaba1; --line: #2b372f;
+  --basil: #6cc28a; --basil-soft: #1f3527; --mustard: #f0bd4f; --mustard-soft: #3a3020;
+  --danger: #f08a73; --danger-soft: #3d2420; --shadow: 0 1px 2px rgba(0,0,0,.3); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--basil); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+
+header.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.brand { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-block: 14px 8px; flex-wrap: wrap; }
+.brand h1 { font-family: var(--f-display); font-weight: 800; font-size: 1.45rem; margin: 0; letter-spacing: -.01em; }
+.brand h1 span { color: var(--basil); }
+.brand .store { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+nav.tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+nav.tabs a {
+  flex: 0 0 auto; text-decoration: none; color: var(--muted); font-weight: 600; font-size: .92rem;
+  padding: 7px 14px; border-radius: 999px;
+}
+nav.tabs a[aria-current="page"] { background: var(--ink); color: var(--bg); }
+nav.tabs a .badge { font-size: .75rem; margin-left: 4px; opacity: .8; }
+
+main { padding-block: 18px 60px; }
+section.view { display: grid; gap: 16px; }
+h2 { font-family: var(--f-display); font-weight: 600; font-size: 1.25rem; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0; font-size: .9rem; }
+
+/* Bandeau budget */
+.budget {
+  background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); padding: 16px;
+  display: grid; gap: 10px;
+}
+.budget .row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.budget .big { font-family: var(--f-display); font-weight: 800; font-size: 2rem; line-height: 1; }
+.budget .big small { font-size: .95rem; font-weight: 600; color: var(--muted); }
+.meter { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--basil); border-radius: 99px; transition: width .3s; }
+.meter.over i { background: var(--danger); }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: var(--basil-soft); color: var(--basil); }
+.pill.warn { background: var(--danger-soft); color: var(--danger); }
+.pill.neutral { background: var(--mustard-soft); color: var(--ink); }
+
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 9px 14px; font-weight: 600; font-size: .9rem;
+}
+a.btn { color: var(--ink); text-decoration: none; }
+.btn:hover { border-color: var(--basil); }
+.btn.primary { background: var(--basil); color: #fff; border-color: var(--basil); }
+:root[data-theme="dark"] .btn.primary { color: #0d1a11; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary { color: #0d1a11; } }
+.btn.small { padding: 5px 10px; font-size: .82rem; border-radius: 10px; }
+.btn.ghost { background: transparent; }
+
+/* Dîners */
+.days { display: grid; gap: 10px; }
+.day {
+  background: var(--surface); border-radius: 16px; box-shadow: var(--shadow);
+  display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center; padding: 12px;
+}
+.day .dow { font-family: var(--f-display); font-weight: 800; font-size: .95rem; text-transform: uppercase; color: var(--basil); text-align: center; line-height: 1.1; }
+.day .dow small { display: block; font-family: var(--f-body); font-weight: 500; font-size: .7rem; color: var(--muted); text-transform: none; }
+.day .info { min-width: 0; }
+.day .name { font-weight: 600; background: none; border: 0; padding: 0; text-align: left; font-size: 1rem; line-height: 1.3; }
+.day .name:hover { color: var(--basil); text-decoration: underline; }
+.day .meta { display: flex; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: .82rem; margin-top: 2px; }
+.day .price { text-align: right; }
+.day .price b { font-family: var(--f-display); font-size: 1.1rem; display: block; }
+.day .price span { font-size: .72rem; color: var(--muted); }
+.day .tools { grid-column: 2 / 4; display: flex; gap: 6px; flex-wrap: wrap; }
+@media (min-width: 560px) {
+  .day { grid-template-columns: 64px 1fr auto auto; }
+  .day .tools { grid-column: auto; }
+}
+
+/* Courses */
+.rayon { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+.rayon h3 { margin: 0; padding: 12px 16px; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
+.item { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: 0; }
+.item input { width: 20px; height: 20px; accent-color: var(--basil); }
+.item label { min-width: 0; cursor: pointer; }
+.item .qty { font-weight: 700; margin-right: 4px; }
+.item .hint { display: block; font-size: .78rem; color: var(--muted); }
+.item.done label { text-decoration: line-through; color: var(--muted); }
+.item .cost { font-weight: 600; }
+.placard { background: var(--mustard-soft); border-radius: 16px; padding: 14px 16px; font-size: .9rem; }
+.placard b { display: block; margin-bottom: 4px; }
+
+/* Prix */
+.prices { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+.prow { display: grid; grid-template-columns: 1fr 96px; gap: 10px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+.prow:last-child { border-bottom: 0; }
+.prow .pname { min-width: 0; }
+.prow .pname small { display: block; color: var(--muted); font-size: .78rem; }
+.prow input { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); text-align: right; }
+.prow input.changed { border-color: var(--mustard); }
+.rayon-title { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 12px 16px 6px; background: var(--bg); }
+
+/* Réglages */
+.form { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); padding: 16px; display: grid; gap: 18px; }
+.field { display: grid; gap: 8px; }
+.field > label, .field > .lbl { font-weight: 600; }
+.stepper { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; width: max-content; }
+.stepper button { border: 0; background: var(--bg); width: 42px; height: 40px; font-size: 1.2rem; }
+.stepper output { min-width: 56px; text-align: center; font-weight: 700; }
+input[type="range"] { width: 100%; accent-color: var(--basil); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { position: relative; }
+.chip input { position: absolute; opacity: 0; inset: 0; }
+.chip span { display: inline-block; padding: 7px 12px; border-radius: 99px; border: 1px solid var(--line); font-size: .88rem; }
+.chip input:checked + span { background: var(--basil); border-color: var(--basil); color: #fff; }
+.chip input:focus-visible + span { outline: 2px solid var(--basil); outline-offset: 2px; }
+
+/* Fenêtre recette / échange */
+.overlay { position: fixed; inset: 0; background: rgba(10, 18, 12, .45); z-index: 20; display: grid; place-items: end center; }
+@media (min-width: 640px) { .overlay { place-items: center; } }
+.sheet {
+  background: var(--surface); width: min(640px, 100%); max-height: 88vh; overflow-y: auto; border-radius: 20px 20px 0 0;
+  padding: 20px max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  display: grid; gap: 14px;
+}
+@media (min-width: 640px) { .sheet { border-radius: 20px; padding: 24px; } }
+.sheet header { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+.sheet h2 { font-size: 1.4rem; }
+.sheet ul, .sheet ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.sheet h4 { margin: 0; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.close { border: 0; background: var(--bg); width: 36px; height: 36px; border-radius: 99px; font-size: 1.1rem; flex: 0 0 auto; }
+.alts { display: grid; gap: 6px; }
+.alt { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.alt:hover { border-color: var(--basil); }
+.alt small { display: block; color: var(--muted); font-size: .78rem; }
+.alt .delta { font-weight: 700; font-size: .9rem; }
+.alt .delta.up { color: var(--danger); }
+.alt .delta.down { color: var(--basil); }
+.alt.over { opacity: .6; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600; z-index: 30; }
+.note { font-size: .82rem; color: var(--muted); }
+textarea.copy { width: 100%; min-height: 160px; border-radius: 12px; border: 1px solid var(--line); padding: 10px; background: var(--bg); color: var(--ink); font: .85rem/1.4 ui-monospace, Menlo, monospace; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>Mes dîners <span>malins</span></h1>
+      <div class="store">Prix calés sur Picnic</div>
+    </div>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#semaine" data-view="semaine">Semaine</a>
+      <a href="#courses" data-view="courses">Courses <span class="badge num" id="badge-courses"></span></a>
+      <a href="#reglages" data-view="reglages">Réglages</a>
+      <a href="#prix" data-view="prix">Prix</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="view" id="v-semaine"></section>
+  <section class="view" id="v-courses" hidden></section>
+  <section class="view" id="v-reglages" hidden></section>
+  <section class="view" id="v-prix" hidden></section>
+</main>
+<div id="modal"></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/* =========================================================
+   1. PRODUITS (prix indicatifs Picnic France, modifiables)
+   [nom, rayon, taille du paquet, unité, prix €, libellé unité, allergènes, régime]
+   ========================================================= */
+const RAYONS = {
+  legumes: "Fruits & légumes", viande: "Boucherie", poisson: "Poissonnerie", frais: "Crèmerie & frais",
+  epicerie: "Épicerie", surgeles: "Surgelés", boulangerie: "Pain"
+};
+const PRODUITS = {
+  pates:        ["Spaghetti 500 g", "epicerie", 500, "g", 0.95, "", ["gluten"]],
+  penne:        ["Penne 500 g", "epicerie", 500, "g", 0.95, "", ["gluten"]],
+  riz:          ["Riz basmati 1 kg", "epicerie", 1000, "g", 2.49, "", []],
+  semoule:      ["Semoule moyenne 500 g", "epicerie", 500, "g", 0.99, "", ["gluten"]],
+  nouilles:     ["Nouilles chinoises 250 g", "epicerie", 250, "g", 1.29, "", ["gluten", "oeuf"]],
+  lentilles:    ["Lentilles corail 500 g", "epicerie", 500, "g", 1.79, "", []],
+  tomates_conc: ["Tomates concassées 400 g", "epicerie", 400, "g", 0.99, "", []],
+  thon:         ["Thon au naturel 3 × 80 g", "epicerie", 240, "g", 3.29, "", ["poisson"], "poisson"],
+  haricots:     ["Haricots rouges 400 g", "epicerie", 400, "g", 0.89, "", []],
+  pois_chiches: ["Pois chiches 400 g", "epicerie", 400, "g", 0.89, "", []],
+  mais:         ["Maïs doux 285 g", "epicerie", 285, "g", 0.99, "", []],
+  lait_coco:    ["Lait de coco 400 ml", "epicerie", 400, "ml", 1.49, "", []],
+  sauce_soja:   ["Sauce soja 250 ml", "epicerie", 250, "ml", 1.69, "", ["soja", "gluten"]],
+  pesto:        ["Pesto alla genovese 190 g", "epicerie", 190, "g", 1.79, "", ["lait", "fruits à coque"]],
+  tortillas:    ["Tortillas de blé × 8", "epicerie", 8, "pc", 1.79, "tortilla", ["gluten"]],
+  gnocchi:      ["Gnocchi 500 g", "frais", 500, "g", 1.39, "", ["gluten"]],
+  oeufs:        ["Œufs plein air × 6", "frais", 6, "pc", 2.19, "œuf", ["oeuf"]],
+  creme:        ["Crème fraîche 20 cl", "frais", 200, "ml", 1.15, "", ["lait"]],
+  lait:         ["Lait demi-écrémé 1 L", "frais", 1000, "ml", 1.09, "", ["lait"]],
+  beurre:       ["Beurre doux 250 g", "frais", 250, "g", 2.39, "", ["lait"]],
+  emmental:     ["Emmental râpé 200 g", "frais", 200, "g", 1.99, "", ["lait"]],
+  parmesan:     ["Parmesan râpé 70 g", "frais", 70, "g", 1.89, "", ["lait"]],
+  mozzarella:   ["Mozzarella 125 g", "frais", 125, "g", 0.89, "", ["lait"]],
+  feta:         ["Feta AOP 200 g", "frais", 200, "g", 2.29, "", ["lait"]],
+  reblochon:    ["Reblochon 240 g", "frais", 240, "g", 3.49, "", ["lait"]],
+  yaourt:       ["Yaourt nature 4 × 125 g", "frais", 500, "g", 0.99, "", ["lait"]],
+  pate_pizza:   ["Pâte à pizza", "frais", 1, "pc", 1.49, "pâte", ["gluten"]],
+  pate_brisee:  ["Pâte brisée", "frais", 1, "pc", 1.19, "pâte", ["gluten", "lait"]],
+  jambon:       ["Jambon blanc × 4 tranches", "frais", 4, "pc", 1.99, "tranche", [], "porc"],
+  lardons:      ["Lardons fumés 2 × 100 g", "frais", 200, "g", 2.29, "", [], "porc"],
+  chorizo:      ["Chorizo doux 225 g", "frais", 225, "g", 2.49, "", [], "porc"],
+  boeuf:        ["Bœuf haché 5 % 2 × 250 g", "viande", 500, "g", 5.49, "", [], "viande"],
+  poulet:       ["Filets de poulet 500 g", "viande", 500, "g", 5.99, "", [], "viande"],
+  cuisses:      ["Cuisses de poulet × 4", "viande", 4, "pc", 4.99, "cuisse", [], "viande"],
+  saucisses:    ["Saucisses de Toulouse × 4", "viande", 4, "pc", 3.99, "saucisse", [], "porc"],
+  saumon:       ["Pavés de saumon × 2 (250 g)", "poisson", 250, "g", 5.99, "", ["poisson"], "poisson"],
+  colin:        ["Filets de colin surgelés 400 g", "surgeles", 400, "g", 3.99, "", ["poisson"], "poisson"],
+  epinards:     ["Épinards hachés 750 g", "surgeles", 750, "g", 1.89, "", []],
+  petits_pois:  ["Petits pois 1 kg", "surgeles", 1000, "g", 2.29, "", []],
+  oignons:      ["Oignons jaunes 1 kg", "legumes", 1000, "g", 1.49, "", []],
+  ail:          ["Ail 250 g", "legumes", 250, "g", 1.29, "", []],
+  pdt:          ["Pommes de terre 2,5 kg", "legumes", 2500, "g", 2.99, "", []],
+  carottes:     ["Carottes 1 kg", "legumes", 1000, "g", 1.29, "", []],
+  courgettes:   ["Courgettes 1 kg", "legumes", 1000, "g", 2.49, "", []],
+  poivrons:     ["Poivrons tricolores × 3 (500 g)", "legumes", 500, "g", 2.29, "", []],
+  brocoli:      ["Brocoli (500 g)", "legumes", 500, "g", 1.49, "", []],
+  champignons:  ["Champignons de Paris 250 g", "legumes", 250, "g", 1.49, "", []],
+  tomates:      ["Tomates grappe 500 g", "legumes", 500, "g", 1.99, "", []],
+  concombre:    ["Concombre", "legumes", 1, "pc", 0.79, "concombre", []],
+  salade:       ["Laitue", "legumes", 1, "pc", 0.99, "salade", []],
+  citron:       ["Citrons × 4", "legumes", 4, "pc", 1.49, "citron", []],
+  baguette:     ["Baguette", "boulangerie", 1, "pc", 0.95, "baguette", ["gluten"]],
+  pain_mie:     ["Pain de mie × 14 tranches", "boulangerie", 14, "pc", 1.49, "tranche", ["gluten"]]
+};
+
+/* =========================================================
+   2. RECETTES  — quantités POUR 1 PERSONNE
+   pl = ce qu'on a normalement dans les placards (non compté)
+   ========================================================= */
+const RECETTES = [
+  { id: "carbo", n: "Spaghetti à la carbonara", t: 20,
+    ing: [["pates", 100], ["lardons", 60], ["oeufs", 1], ["parmesan", 15]], pl: ["sel", "poivre"],
+    st: ["Fais cuire les spaghetti dans une grande casserole d'eau salée.", "Fais dorer les lardons à la poêle, sans matière grasse.", "Dans un bol, bats les œufs avec le parmesan et beaucoup de poivre.", "Égoutte les pâtes en gardant un peu d'eau de cuisson.", "Hors du feu, mélange pâtes, lardons et œufs. Ajoute un filet d'eau de cuisson pour rendre crémeux."] },
+  { id: "bolboeuf", n: "Bol bœuf haché, riz et brocoli sautés", t: 25,
+    ing: [["boeuf", 125], ["riz", 75], ["brocoli", 150], ["sauce_soja", 15], ["ail", 4]], pl: ["huile"],
+    st: ["Lance la cuisson du riz.", "Coupe le brocoli en petits bouquets, fais-les cuire 4 min à la vapeur ou à l'eau.", "Fais revenir l'ail haché dans un peu d'huile, ajoute le bœuf et émiette-le.", "Ajoute le brocoli et la sauce soja, laisse sauter 2 min.", "Sers sur le riz."] },
+  { id: "saucisses", n: "Saucisses, poivrons et pommes de terre à la poêle", t: 30,
+    ing: [["saucisses", 1], ["poivrons", 150], ["oignons", 60], ["pdt", 200]], pl: ["huile", "paprika", "sel"],
+    st: ["Coupe les pommes de terre en dés et fais-les cuire 8 min à l'eau.", "Fais dorer les saucisses à la poêle 10 min, puis réserve-les.", "Dans la même poêle, fais revenir oignons et poivrons en lanières.", "Ajoute les pommes de terre, le paprika, puis les saucisses coupées. Laisse dorer 5 min."] },
+  { id: "patesthon", n: "Pâtes au thon à la tomate", t: 20,
+    ing: [["penne", 100], ["thon", 60], ["tomates_conc", 130], ["oignons", 40], ["ail", 3]], pl: ["huile", "herbes de Provence", "sel"],
+    st: ["Fais cuire les penne.", "Fais revenir oignon et ail dans un peu d'huile.", "Ajoute les tomates et les herbes, laisse mijoter 10 min.", "Ajoute le thon émietté, mélange avec les pâtes égouttées."] },
+  { id: "burritos", n: "Burritos gratinés haricots-fromage", t: 25,
+    ing: [["tortillas", 2], ["haricots", 120], ["mais", 50], ["emmental", 40], ["oignons", 40], ["riz", 40]], pl: ["cumin", "huile"],
+    st: ["Fais cuire le riz.", "Fais revenir l'oignon, ajoute haricots égouttés, maïs et cumin. Écrase un peu.", "Garnis les tortillas avec le riz et la farce, roule-les.", "Mets-les dans un plat, parsème d'emmental, 10 min au four à 200 °C."] },
+  { id: "shakshuka", n: "Shakshuka aux œufs pochés", t: 25,
+    ing: [["oeufs", 2], ["tomates_conc", 200], ["poivrons", 100], ["oignons", 50], ["ail", 3], ["feta", 30], ["baguette", 0.5]], pl: ["huile", "cumin", "paprika"],
+    st: ["Fais revenir oignon, ail et poivron émincés 5 min.", "Ajoute tomates, cumin et paprika. Laisse réduire 10 min.", "Creuse des petits puits et casse les œufs dedans.", "Couvre et laisse cuire 5 à 7 min. Émiette la feta, sers avec le pain."] },
+  { id: "currycoco", n: "Poulet curry coco et riz", t: 30,
+    ing: [["poulet", 125], ["lait_coco", 100], ["riz", 75], ["oignons", 40], ["courgettes", 100]], pl: ["curry", "huile", "sel"],
+    st: ["Lance la cuisson du riz.", "Coupe le poulet en morceaux, fais-le dorer avec l'oignon.", "Ajoute la courgette en dés et le curry, mélange 2 min.", "Verse le lait de coco, laisse mijoter 12 min."] },
+  { id: "dahl", n: "Dahl de lentilles corail", t: 30,
+    ing: [["lentilles", 80], ["lait_coco", 80], ["tomates_conc", 100], ["oignons", 40], ["ail", 3], ["riz", 60]], pl: ["curry", "cumin", "huile"],
+    st: ["Fais revenir oignon et ail avec les épices.", "Ajoute lentilles rincées, tomates, lait de coco et un verre d'eau.", "Laisse cuire 20 min en remuant, jusqu'à ce que ce soit fondant.", "Sers avec le riz."] },
+  { id: "cuissespaprika", n: "Cuisses de poulet paprika au four", t: 50,
+    ing: [["cuisses", 1], ["pdt", 250], ["oignons", 30]], pl: ["paprika", "huile", "sel", "ail en poudre"],
+    st: ["Préchauffe le four à 210 °C.", "Coupe les pommes de terre en quartiers et l'oignon en lamelles.", "Mélange le tout avec huile, paprika, sel dans un plat, pose les cuisses dessus.", "Enfourne 45 min, en retournant à mi-cuisson."] },
+  { id: "gratinthon", n: "Gratin de pâtes au thon", t: 35,
+    ing: [["penne", 90], ["thon", 60], ["creme", 50], ["emmental", 30], ["tomates_conc", 60]], pl: ["sel", "poivre"],
+    st: ["Fais cuire les penne 2 min de moins que le temps indiqué.", "Mélange les pâtes avec thon, tomates et crème.", "Verse dans un plat, couvre d'emmental.", "15 min au four à 200 °C."] },
+  { id: "tartiflette", n: "Tartiflette express", t: 40,
+    ing: [["pdt", 300], ["lardons", 50], ["reblochon", 60], ["oignons", 40], ["creme", 30]], pl: ["poivre"],
+    st: ["Fais cuire les pommes de terre en rondelles 10 min à l'eau.", "Fais revenir oignons et lardons.", "Mélange avec les pommes de terre et la crème dans un plat.", "Pose le reblochon coupé en deux sur le dessus, 20 min à 210 °C."] },
+  { id: "croque", n: "Croque-monsieur et salade", t: 20,
+    ing: [["pain_mie", 4], ["jambon", 1], ["emmental", 30], ["beurre", 10], ["salade", 0.25]], pl: ["vinaigrette"],
+    st: ["Beurre légèrement les tranches de pain de mie.", "Monte les croques : pain, jambon, emmental, pain.", "Parsème d'emmental, 10 min au four à 200 °C ou à la poêle.", "Sers avec la salade."] },
+  { id: "wrapcesar", n: "Wrap poulet César", t: 20,
+    ing: [["tortillas", 2], ["poulet", 100], ["salade", 0.25], ["parmesan", 10], ["yaourt", 40], ["citron", 0.25]], pl: ["huile", "sel", "poivre"],
+    st: ["Fais cuire le poulet en lanières à la poêle.", "Sauce : yaourt, jus de citron, parmesan, sel, poivre.", "Garnis les tortillas de salade, poulet et sauce.", "Roule bien serré et coupe en deux."] },
+  { id: "pizza", n: "Pizza maison jambon-champignons", t: 30,
+    ing: [["pate_pizza", 0.5], ["tomates_conc", 60], ["mozzarella", 62], ["jambon", 1], ["champignons", 60]], pl: ["herbes de Provence", "huile"],
+    st: ["Préchauffe le four à 230 °C.", "Étale la pâte, couvre de tomates et d'herbes.", "Ajoute jambon, champignons émincés et mozzarella.", "Enfourne 12 à 15 min."] },
+  { id: "quiche", n: "Quiche lorraine et salade", t: 45,
+    ing: [["pate_brisee", 0.25], ["lardons", 50], ["oeufs", 1], ["creme", 50], ["lait", 50], ["emmental", 20], ["salade", 0.25]], pl: ["muscade", "poivre"],
+    st: ["Préchauffe le four à 190 °C, étale la pâte dans un moule.", "Fais dorer les lardons.", "Bats œufs, crème, lait, poivre et muscade.", "Répartis lardons et emmental, verse l'appareil. 35 min au four."] },
+  { id: "saumon", n: "Saumon, riz et courgettes au citron", t: 25,
+    ing: [["saumon", 125], ["riz", 75], ["courgettes", 150], ["citron", 0.25]], pl: ["huile", "sel"],
+    st: ["Lance la cuisson du riz.", "Fais sauter la courgette en demi-rondelles 6 min.", "Fais cuire le saumon côté peau 4 min, puis 2 min de l'autre côté.", "Arrose de citron et sers."] },
+  { id: "colin", n: "Colin et purée maison", t: 30,
+    ing: [["colin", 130], ["pdt", 250], ["lait", 60], ["beurre", 10]], pl: ["sel", "muscade", "huile"],
+    st: ["Fais cuire les pommes de terre épluchées 20 min à l'eau.", "Écrase-les avec le beurre et le lait chaud, sale.", "Fais cuire le colin à la poêle 4 min de chaque côté.", "Sers avec la purée."] },
+  { id: "gnocchi", n: "Gnocchi au pesto et tomates", t: 15,
+    ing: [["gnocchi", 170], ["pesto", 35], ["tomates", 100], ["parmesan", 10]], pl: ["huile"],
+    st: ["Fais dorer les gnocchi à la poêle avec un peu d'huile, 6 min.", "Ajoute les tomates coupées, 2 min.", "Hors du feu, ajoute le pesto.", "Parsème de parmesan."] },
+  { id: "nouilles", n: "Nouilles sautées au poulet", t: 20,
+    ing: [["nouilles", 80], ["poulet", 100], ["carottes", 80], ["courgettes", 80], ["sauce_soja", 20], ["ail", 3]], pl: ["huile"],
+    st: ["Fais cuire les nouilles comme indiqué.", "Fais sauter le poulet en lanières, puis carottes et courgettes en bâtonnets.", "Ajoute l'ail, les nouilles et la sauce soja.", "Mélange 2 min à feu vif."] },
+  { id: "chili", n: "Chili con carne", t: 40,
+    ing: [["boeuf", 100], ["haricots", 120], ["tomates_conc", 130], ["oignons", 40], ["poivrons", 60], ["riz", 70]], pl: ["cumin", "piment", "huile"],
+    st: ["Fais revenir oignon et poivron.", "Ajoute le bœuf, fais-le dorer.", "Ajoute tomates, haricots égouttés et épices, laisse mijoter 25 min.", "Sers avec le riz."] },
+  { id: "couscous", n: "Couscous express pois chiches et légumes", t: 30,
+    ing: [["semoule", 80], ["pois_chiches", 120], ["carottes", 80], ["courgettes", 100], ["oignons", 30], ["tomates_conc", 60]], pl: ["ras el hanout", "huile", "bouillon"],
+    st: ["Fais revenir oignon, carottes et courgettes en morceaux.", "Ajoute tomates, pois chiches, épices et un bol de bouillon, 15 min.", "Fais gonfler la semoule dans l'eau bouillante salée, 5 min.", "Sers les légumes avec leur jus sur la semoule."] },
+  { id: "tortilla", n: "Omelette espagnole aux pommes de terre", t: 35,
+    ing: [["oeufs", 2.5], ["pdt", 200], ["oignons", 50], ["salade", 0.25]], pl: ["huile", "sel"],
+    st: ["Coupe pommes de terre et oignon en fines tranches.", "Fais-les cuire doucement 15 min dans l'huile, à couvert.", "Bats les œufs, ajoute-y les pommes de terre, remets dans la poêle.", "Cuis 5 min, retourne avec une assiette, 3 min. Sers avec la salade."] },
+  { id: "cantonais", n: "Riz cantonais", t: 20,
+    ing: [["riz", 80], ["oeufs", 1], ["jambon", 1], ["petits_pois", 60], ["sauce_soja", 10]], pl: ["huile"],
+    st: ["Fais cuire le riz (idéalement la veille).", "Fais une omelette fine, coupe-la en lanières.", "Fais sauter le riz avec petits pois et jambon en dés.", "Ajoute l'omelette et la sauce soja."] },
+  { id: "chorizo", n: "Poêlée chorizo, pois chiches et épinards", t: 20,
+    ing: [["chorizo", 40], ["pois_chiches", 120], ["epinards", 120], ["tomates_conc", 80], ["baguette", 0.5]], pl: ["huile", "paprika"],
+    st: ["Fais revenir le chorizo en rondelles 2 min.", "Ajoute les épinards encore surgelés, laisse fondre 5 min.", "Ajoute pois chiches et tomates, 8 min.", "Sers avec le pain."] },
+  { id: "parmentier", n: "Hachis parmentier", t: 50,
+    ing: [["boeuf", 110], ["pdt", 250], ["lait", 60], ["beurre", 10], ["emmental", 20], ["oignons", 30]], pl: ["sel", "poivre", "muscade"],
+    st: ["Fais cuire les pommes de terre et prépare une purée avec lait et beurre.", "Fais revenir l'oignon et le bœuf.", "Dans un plat : viande, puis purée, puis emmental.", "20 min au four à 200 °C."] },
+  { id: "grecque", n: "Salade grecque aux pois chiches", t: 15,
+    ing: [["tomates", 120], ["concombre", 0.33], ["feta", 50], ["oignons", 15], ["pois_chiches", 60], ["baguette", 0.5]], pl: ["huile d'olive", "origan", "vinaigre"],
+    st: ["Coupe tomates et concombre en dés, l'oignon en fines lamelles.", "Ajoute pois chiches égouttés et feta en cubes.", "Assaisonne avec huile, vinaigre et origan.", "Sers avec le pain."] },
+  { id: "champi", n: "Pâtes crémeuses aux champignons", t: 20,
+    ing: [["pates", 100], ["champignons", 100], ["creme", 50], ["ail", 3], ["parmesan", 10]], pl: ["huile", "sel", "poivre"],
+    st: ["Fais cuire les pâtes.", "Fais dorer les champignons émincés avec l'ail.", "Ajoute la crème, laisse épaissir 2 min.", "Mélange avec les pâtes et le parmesan."] },
+  { id: "basquaise", n: "Poulet basquaise et riz", t: 40,
+    ing: [["poulet", 125], ["poivrons", 150], ["tomates_conc", 100], ["oignons", 40], ["riz", 70]], pl: ["huile", "paprika", "sel"],
+    st: ["Fais dorer le poulet en morceaux, réserve.", "Fais revenir oignons et poivrons 10 min.", "Ajoute tomates, paprika et le poulet, mijote 20 min.", "Sers avec le riz."] }
+];
+
+const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+const EXCLUSIONS = [
+  ["porc", "Pas de porc"], ["poisson", "Pas de poisson"], ["vege", "Végétarien"],
+  ["gluten", "Sans gluten"], ["lait", "Sans lactose"], ["oeuf", "Sans œuf"],
+  ["soja", "Sans soja"], ["fruits à coque", "Sans fruits à coque"], ["express", "Rapide (30 min max)"]
+];
+
+/* =========================================================
+   3. ÉTAT (gardé dans le navigateur)
+   ========================================================= */
+const KEY = "mes-diners-malins-v1";
+const defaults = () => ({ personnes: 2, diners: 5, budget: 40, exclus: [], menu: [], coches: {}, prix: {}, favoris: [] });
+let S = defaults();
+try { const saved = JSON.parse(localStorage.getItem(KEY) || "null"); if (saved) S = Object.assign(defaults(), saved); } catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+const eur = v => v.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+const prix = id => (S.prix[id] != null ? S.prix[id] : PRODUITS[id][4]);
+const R = id => RECETTES.find(r => r.id === id);
+
+function infosRecette(r) {
+  const al = new Set(), regime = new Set();
+  r.ing.forEach(([p]) => { PRODUITS[p][6].forEach(a => al.add(a)); if (PRODUITS[p][7]) regime.add(PRODUITS[p][7]); });
+  if (regime.has("porc")) regime.add("viande");
+  return { al: [...al], regime: [...regime] };
+}
+function coutPortion(r) { return r.ing.reduce((s, [p, q]) => s + q / PRODUITS[p][2] * prix(p), 0); }
+
+function autorisee(r) {
+  const { al, regime } = infosRecette(r);
+  for (const x of S.exclus) {
+    if (x === "porc" && regime.includes("porc")) return false;
+    if (x === "poisson" && regime.includes("poisson")) return false;
+    if (x === "vege" && (regime.includes("viande") || regime.includes("poisson"))) return false;
+    if (x === "express" && r.t > 30) return false;
+    if (al.includes(x)) return false;
+  }
+  return true;
+}
+
+/* Liste de courses : on additionne tout, puis on achète des paquets entiers */
+function liste(ids) {
+  const besoin = {};
+  ids.forEach(id => R(id).ing.forEach(([p, q]) => { besoin[p] = (besoin[p] || 0) + q * S.personnes; }));
+  const lignes = Object.entries(besoin).map(([p, q]) => {
+    const pack = PRODUITS[p][2];
+    const nb = Math.max(1, Math.ceil(q / pack - 1e-6));
+    return { p, besoin: q, nb, cout: nb * prix(p), reste: nb * pack - q };
+  });
+  return { lignes, total: lignes.reduce((s, l) => s + l.cout, 0) };
+}
+const totalDe = ids => liste(ids).total;
+
+/* =========================================================
+   4. CRÉATION DU MENU sous le budget
+   ========================================================= */
+function melange(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+function creerMenu() {
+  const pool = RECETTES.filter(autorisee).map(r => r.id);
+  // les favoris passent en premier
+  const fav = melange(pool.filter(id => S.favoris.includes(id)));
+  const autres = melange(pool.filter(id => !S.favoris.includes(id)));
+  let menu = [...fav, ...autres].slice(0, S.diners);
+  for (let tour = 0; tour < 60; tour++) {
+    const t = totalDe(menu);
+    if (t <= S.budget) break;
+    // on remplace le dîner le plus cher par un moins cher
+    const ordre = menu.map((id, i) => [i, coutPortion(R(id))]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+    let fait = false;
+    for (const i of ordre) {
+      const options = pool.filter(id => !menu.includes(id)).map(id => {
+        const m = menu.slice(); m[i] = id; return [id, totalDe(m)];
+      }).filter(([, t2]) => t2 < t - 0.01).sort((a, b) => a[1] - b[1]).slice(0, 3);
+      if (options.length) { menu[i] = options[Math.floor(Math.random() * options.length)][0]; fait = true; break; }
+    }
+    if (!fait) break;
+  }
+  S.menu = menu; S.coches = {}; save();
+}
+
+/* =========================================================
+   5. AFFICHAGE
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function qteTexte(p, q) {
+  const [, , , u, , lab] = PRODUITS[p];
+  if (u === "pc") {
+    if (q < 0.3) return "¼ " + lab;
+    if (q < 0.45) return "⅓ " + lab;
+    const r = Math.round(q * 2) / 2, ent = Math.floor(r), demi = r % 1 ? "½" : "";
+    return (ent ? ent + (demi ? " " + demi : "") : demi) + " " + lab + (r > 1 ? "s" : "");
+  }
+  if (u === "g") return q >= 1000 ? (q / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + " kg" : Math.round(q / (q < 30 ? 1 : 5)) * (q < 30 ? 1 : 5) + " g";
+  return q >= 1000 ? (q / 1000).toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + " L" : Math.round(q / 5) * 5 + " ml";
+}
+function nomCourt(p) { return PRODUITS[p][0].replace(/\s[\d×].*$/, "").replace(/\s\(.*\)$/, ""); }
+
+function renderSemaine() {
+  const v = $("#v-semaine");
+  if (!S.menu.length) { v.innerHTML = `<p class="sub">Aucune recette ne correspond à tes réglages. Retire un filtre dans « Réglages ».</p>`; return; }
+  const { total } = liste(S.menu);
+  const over = total > S.budget;
+  const pct = Math.min(100, total / S.budget * 100);
+  const parRepas = total / (S.menu.length * S.personnes);
+  const pool = RECETTES.filter(autorisee).length;
+  v.innerHTML = `
+    <div class="budget">
+      <div class="row">
+        <div>
+          <div class="sub">Courses de la semaine sur Picnic</div>
+          <div class="big num">${eur(total)} <small>/ ${eur(S.budget)}</small></div>
+        </div>
+        <span class="pill ${over ? "warn" : ""}">${over ? "Au-dessus du budget de " + eur(total - S.budget) : "Dans le budget, il reste " + eur(S.budget - total)}</span>
+      </div>
+      <div class="meter ${over ? "over" : ""}"><i style="width:${pct}%"></i></div>
+      <div class="row sub"><span>${S.menu.length} dîners · ${S.personnes} pers. · <span class="num">${eur(parRepas)}</span> par personne et par repas</span></div>
+      ${over ? `<p class="note">Même avec les recettes les moins chères, ce budget ne passe pas. Monte un peu le budget ou retire un filtre dans « Réglages ».</p>` : ""}
+      <div class="actions">
+        <button class="btn primary" id="regen">Nouveau menu</button>
+        <a class="btn" href="#courses">Voir la liste de courses</a>
+      </div>
+    </div>
+    <div class="days">
+      ${S.menu.map((id, i) => {
+        const r = R(id); const fav = S.favoris.includes(id);
+        return `<article class="day">
+          <div class="dow">${JOURS[i].slice(0, 3)}<small>${JOURS[i]}</small></div>
+          <div class="info">
+            <button class="name" data-voir="${id}">${esc(r.n)}</button>
+            <div class="meta"><span>${r.t} min</span>${r.t <= 20 ? `<span>express</span>` : ""}${fav ? `<span>♥ favori</span>` : ""}</div>
+          </div>
+          <div class="price"><b class="num">${eur(coutPortion(r))}</b><span>par pers.</span></div>
+          <div class="tools">
+            <button class="btn small" data-changer="${i}">Changer</button>
+          </div>
+        </article>`;
+      }).join("")}
+    </div>
+    <p class="note">${pool} recettes possibles avec tes réglages. Le prix par personne compte seulement ce que tu utilises. Le total compte les paquets entiers achetés sur Picnic.</p>`;
+  $("#regen").onclick = () => { creerMenu(); renderAll(); toast("Nouveau menu prêt"); };
+}
+
+function renderCourses() {
+  const v = $("#v-courses");
+  const { lignes, total } = liste(S.menu);
+  const fait = lignes.filter(l => S.coches[l.p]).length;
+  $("#badge-courses").textContent = lignes.length ? `${fait}/${lignes.length}` : "";
+  const groupes = {};
+  lignes.forEach(l => (groupes[PRODUITS[l.p][1]] = groupes[PRODUITS[l.p][1]] || []).push(l));
+  const placard = [...new Set(S.menu.flatMap(id => R(id).pl))].sort((a, b) => a.localeCompare(b, "fr"));
+  v.innerHTML = `
+    <div class="budget">
+      <div class="row">
+        <div><div class="sub">À ajouter au panier Picnic</div><div class="big num">${eur(total)}</div></div>
+        <span class="pill neutral">${fait} / ${lignes.length} dans le panier</span>
+      </div>
+      <p class="note" style="margin:0">Ouvre l'appli Picnic à côté, cherche chaque produit et coche-le ici une fois ajouté.</p>
+      <div class="actions">
+        <button class="btn primary" id="copier">Copier la liste</button>
+        <button class="btn" id="decocher">Tout décocher</button>
+      </div>
+      <div id="copie-zone"></div>
+    </div>
+    ${Object.keys(RAYONS).filter(k => groupes[k]).map(k => `
+      <div class="rayon">
+        <h3><span>${RAYONS[k]}</span><span class="num">${eur(groupes[k].reduce((s, l) => s + l.cout, 0))}</span></h3>
+        ${groupes[k].sort((a, b) => PRODUITS[a.p][0].localeCompare(PRODUITS[b.p][0], "fr")).map(l => `
+          <div class="item ${S.coches[l.p] ? "done" : ""}">
+            <input type="checkbox" id="c-${l.p}" data-coche="${l.p}" ${S.coches[l.p] ? "checked" : ""}>
+            <label for="c-${l.p}"><span class="qty num">${l.nb} ×</span>${esc(PRODUITS[l.p][0])}
+              <span class="hint">Il te faut ${qteTexte(l.p, l.besoin)}${l.reste > 0.01 * PRODUITS[l.p][2] ? ` · il restera ${qteTexte(l.p, l.reste)}` : ""}</span></label>
+            <span class="cost num">${eur(l.cout)}</span>
+          </div>`).join("")}
+      </div>`).join("")}
+    ${placard.length ? `<div class="placard"><b>À vérifier dans tes placards</b>${placard.map(esc).join(", ")}. Pas compté dans le total.</div>` : ""}`;
+  v.querySelectorAll("[data-coche]").forEach(c => c.onchange = () => { S.coches[c.dataset.coche] = c.checked; save(); renderCourses(); });
+  $("#decocher").onclick = () => { S.coches = {}; save(); renderCourses(); };
+  $("#copier").onclick = () => {
+    const txt = Object.keys(RAYONS).filter(k => groupes[k]).map(k => RAYONS[k].toUpperCase() + "\n" + groupes[k].map(l => `- ${l.nb} × ${PRODUITS[l.p][0]}`).join("\n")).join("\n\n")
+      + `\n\nTotal estimé : ${eur(total)}`;
+    const montrer = () => { $("#copie-zone").innerHTML = `<textarea class="copy" id="copie-txt" readonly>${esc(txt)}</textarea>`; const t = $("#copie-txt"); t.focus(); t.select(); toast("Sélectionne et copie le texte"); };
+    try { navigator.clipboard.writeText(txt).then(() => toast("Liste copiée"), montrer); } catch (e) { montrer(); }
+  };
+}
+
+function renderReglages() {
+  const v = $("#v-reglages");
+  v.innerHTML = `
+    <div><h2>Crée ton menu</h2><p class="sub">Choisis ton budget et tes envies. Le menu se refait en respectant tout ça.</p></div>
+    <form class="form" id="form-menu">
+      <div class="field"><span class="lbl">Nombre de personnes</span>
+        <div class="stepper"><button type="button" data-step="personnes" data-d="-1" aria-label="Moins">−</button><output id="o-personnes" class="num">${S.personnes}</output><button type="button" data-step="personnes" data-d="1" aria-label="Plus">+</button></div></div>
+      <div class="field"><span class="lbl">Dîners dans la semaine</span>
+        <div class="stepper"><button type="button" data-step="diners" data-d="-1" aria-label="Moins">−</button><output id="o-diners" class="num">${S.diners}</output><button type="button" data-step="diners" data-d="1" aria-label="Plus">+</button></div></div>
+      <div class="field"><label for="budget">Budget courses max : <span id="o-budget" class="num">${eur(S.budget)}</span></label>
+        <input type="range" id="budget" min="10" max="200" step="5" value="${S.budget}">
+        <span class="note" id="o-budget-pp"></span></div>
+      <div class="field"><span class="lbl">Mes contraintes</span>
+        <div class="chips">${EXCLUSIONS.map(([k, l]) => `<label class="chip"><input type="checkbox" id="x-${k.replace(/\s/g, "-")}" value="${k}" ${S.exclus.includes(k) ? "checked" : ""}><span>${l}</span></label>`).join("")}</div>
+        <span class="note">Les allergènes sont repérés à partir des produits. Vérifie toujours l'étiquette en cas d'allergie.</span></div>
+      <div class="actions"><button type="submit" class="btn primary">Créer mon menu</button></div>
+    </form>
+    <div><h2>Mes favoris</h2><p class="sub">Les recettes avec un cœur reviennent en priorité. Ajoute-les depuis une fiche recette.</p></div>
+    <div class="days">${S.favoris.length ? S.favoris.map(id => `<article class="day" style="grid-template-columns:1fr auto"><div class="info"><button class="name" data-voir="${id}">${esc(R(id).n)}</button></div><div class="price"><b class="num">${eur(coutPortion(R(id)))}</b><span>par pers.</span></div></article>`).join("") : `<p class="note">Pas encore de favori.</p>`}</div>`;
+  const ppRepas = () => { $("#o-budget-pp").textContent = `Soit environ ${eur(S.budget / (S.diners * S.personnes))} par personne et par repas.`; };
+  ppRepas();
+  v.querySelectorAll("[data-step]").forEach(b => b.onclick = () => {
+    const k = b.dataset.step, lim = k === "personnes" ? [1, 8] : [1, 7];
+    S[k] = Math.min(lim[1], Math.max(lim[0], S[k] + Number(b.dataset.d)));
+    $("#o-" + k).textContent = S[k]; ppRepas(); save();
+  });
+  $("#budget").oninput = e => { S.budget = Number(e.target.value); $("#o-budget").textContent = eur(S.budget); ppRepas(); save(); };
+  $("#form-menu").onsubmit = e => {
+    e.preventDefault();
+    S.exclus = [...v.querySelectorAll(".chip input:checked")].map(i => i.value);
+    creerMenu(); renderAll(); location.hash = "semaine"; toast("Menu créé");
+  };
+}
+
+function renderPrix() {
+  const v = $("#v-prix");
+  const parRayon = {};
+  Object.keys(PRODUITS).forEach(p => (parRayon[PRODUITS[p][1]] = parRayon[PRODUITS[p][1]] || []).push(p));
+  const nbModifs = Object.keys(S.prix).length;
+  v.innerHTML = `
+    <div><h2>Mes prix Picnic</h2><p class="sub">Ce sont des prix indicatifs. Corrige-les avec ceux de ton appli Picnic : tous les totaux se mettent à jour.</p></div>
+    <div class="actions"><button class="btn" id="reset-prix" ${nbModifs ? "" : "disabled"}>Remettre les prix d'origine${nbModifs ? ` (${nbModifs} modifié${nbModifs > 1 ? "s" : ""})` : ""}</button></div>
+    <div class="prices">
+      ${Object.keys(RAYONS).filter(k => parRayon[k]).map(k => `<div class="rayon-title">${RAYONS[k]}</div>` + parRayon[k].map(p => `
+        <div class="prow"><div class="pname">${esc(PRODUITS[p][0])}<small>Prix d'origine ${eur(PRODUITS[p][4])}</small></div>
+        <input type="number" inputmode="decimal" step="0.01" min="0" id="p-${p}" data-prix="${p}" value="${prix(p).toFixed(2)}" class="num ${S.prix[p] != null ? "changed" : ""}" aria-label="Prix ${esc(PRODUITS[p][0])}"></div>`).join("")).join("")}
+    </div>`;
+  v.querySelectorAll("[data-prix]").forEach(i => i.onchange = () => {
+    const val = parseFloat(String(i.value).replace(",", "."));
+    if (isNaN(val) || val < 0) { i.value = prix(i.dataset.prix).toFixed(2); return; }
+    if (Math.abs(val - PRODUITS[i.dataset.prix][4]) < 0.001) delete S.prix[i.dataset.prix]; else S.prix[i.dataset.prix] = val;
+    save(); i.classList.toggle("changed", S.prix[i.dataset.prix] != null);
+    renderSemaine(); renderCourses(); toast("Prix enregistré");
+  });
+  $("#reset-prix").onclick = () => { S.prix = {}; save(); renderAll(); toast("Prix d'origine remis"); };
+}
+
+/* Fiche recette */
+function ouvrirRecette(id) {
+  const r = R(id); const { al } = infosRecette(r); const fav = S.favoris.includes(id);
+  $("#modal").innerHTML = `<div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(r.n)}">
+    <header><div><h2>${esc(r.n)}</h2><p class="sub">${r.t} min · pour ${S.personnes} pers. · <span class="num">${eur(coutPortion(r))}</span> par pers.</p></div><button class="close" id="fermer" aria-label="Fermer">✕</button></header>
+    ${al.length ? `<div class="chips">${al.map(a => `<span class="pill neutral">Contient : ${esc(a)}</span>`).join("")}</div>` : ""}
+    <h4>Ingrédients</h4>
+    <ul>${r.ing.map(([p, q]) => `<li><b class="num">${qteTexte(p, q * S.personnes)}</b> ${esc(nomCourt(p).toLowerCase())}</li>`).join("")}</ul>
+    <p class="note">Placard : ${r.pl.map(esc).join(", ")}.</p>
+    <h4>Préparation</h4>
+    <ol>${r.st.map(s => `<li>${esc(s)}</li>`).join("")}</ol>
+    <div class="actions"><button class="btn ${fav ? "" : "primary"}" id="fav">${fav ? "Retirer des favoris" : "♥ Ajouter aux favoris"}</button></div>
+  </div></div>`;
+  bindModal();
+  $("#fav").onclick = () => { S.favoris = fav ? S.favoris.filter(x => x !== id) : [...S.favoris, id]; save(); ouvrirRecette(id); renderSemaine(); renderReglages(); };
+}
+
+/* Changer un dîner */
+function ouvrirChanger(i) {
+  const actuel = totalDe(S.menu);
+  const opts = RECETTES.filter(r => autorisee(r) && !S.menu.includes(r.id)).map(r => {
+    const m = S.menu.slice(); m[i] = r.id; return { r, t: totalDe(m) };
+  }).sort((a, b) => a.t - b.t);
+  $("#modal").innerHTML = `<div class="overlay" id="ov"><div class="sheet" role="dialog" aria-modal="true" aria-label="Changer le dîner">
+    <header><div><h2>Changer le dîner du ${JOURS[i].toLowerCase()}</h2><p class="sub">À la place de « ${esc(R(S.menu[i]).n)} ». La liste de courses se met à jour toute seule.</p></div><button class="close" id="fermer" aria-label="Fermer">✕</button></header>
+    <div class="alts">${opts.length ? opts.map(({ r, t }) => {
+      const d = t - actuel; const over = t > S.budget;
+      return `<button class="alt ${over ? "over" : ""}" data-pick="${r.id}"><span>${esc(r.n)}<small>${r.t} min · ${eur(coutPortion(r))} par pers.${over ? " · dépasse le budget" : ""}</small></span>
+        <span class="delta num ${d > 0.005 ? "up" : d < -0.005 ? "down" : ""}">${d > 0.005 ? "+" : d < -0.005 ? "−" : "±"}${eur(Math.abs(d))}</span></button>`;
+    }).join("") : `<p class="note">Aucune autre recette avec tes réglages.</p>`}</div>
+  </div></div>`;
+  bindModal();
+  document.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => { S.menu[i] = b.dataset.pick; save(); fermer(); renderAll(); toast("Dîner changé"); });
+}
+function fermer() { $("#modal").innerHTML = ""; }
+function bindModal() {
+  $("#fermer").onclick = fermer; $("#fermer").focus();
+  $("#ov").onclick = e => { if (e.target.id === "ov") fermer(); };
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") fermer(); });
+document.addEventListener("click", e => {
+  const v = e.target.closest("[data-voir]"); if (v) return ouvrirRecette(v.dataset.voir);
+  const c = e.target.closest("[data-changer]"); if (c) return ouvrirChanger(Number(c.dataset.changer));
+});
+
+let tt;
+function toast(m) { const t = $("#toast"); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 1800); }
+
+/* Onglets */
+const VUES = ["semaine", "courses", "reglages", "prix"];
+function route() {
+  const h = location.hash.slice(1); const vue = VUES.includes(h) ? h : "semaine";
+  VUES.forEach(n => { $("#v-" + n).hidden = n !== vue; });
+  document.querySelectorAll("nav.tabs a").forEach(a => { if (a.dataset.view === vue) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+}
+function renderAll() { renderSemaine(); renderCourses(); renderReglages(); renderPrix(); }
+
+// Nettoyage si une recette a disparu, puis premier menu d'exemple
+S.menu = S.menu.filter(id => R(id));
+if (!S.menu.length) creerMenu();
+renderAll(); route();
+window.addEventListener("hashchange", () => { route(); window.scrollTo(0, 0); });
+</script>
