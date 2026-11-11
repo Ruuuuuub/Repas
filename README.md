@@ -1,20 +1,18 @@
 # Mes dîners malins
 
-Une petite appli perso, sur le même principe que Pimzi, mais calée sur **Picnic** :
+Une appli perso de menus de la semaine, sur le principe de Pimzi.
 
-1. **Réglages** : nombre de personnes, nombre de dîners, budget max, contraintes (sans porc, végétarien, sans gluten, rapide…).
-2. **Semaine** : l'appli choisit des dîners et remplace les plus chers jusqu'à passer sous ton budget. Bouton « Changer » pour échanger un plat.
-3. **Courses** : la liste est rangée par rayon, avec le nombre de paquets à acheter sur Picnic et le prix. Tu coches au fur et à mesure que tu ajoutes dans l'appli Picnic. Bouton « Copier la liste ».
-4. **Prix** : les prix sont indicatifs. Corrige-les avec ceux de ton appli Picnic, tout se recalcule.
+- **Mon profil** : un quiz en 9 étapes (magasin, nombre de repas et budget, régime, lactose, allergies, aliments détestés, type de repas et de cuisine, vibe, matériel, temps et niveau).
+- **Dîners / Déjeuners / P'tit déj** : l'algorithme garde seulement les recettes compatibles, favorise celles qui collent à tes envies, puis remplace les plus chères jusqu'à passer sous le budget. Bouton « Changer » sur chaque repas.
+- **Courses** : liste par rayon, paquets entiers à acheter, prix du magasin choisi, cases à cocher, copie de la liste, prix modifiables.
 
-Tout est enregistré dans ton navigateur (rien n'est envoyé nulle part).
+Les prix sont des estimations (prix de base × indice du magasin) : corrige-les dans « Ajuster les prix ».
+Les illustrations sont dessinées automatiquement à partir des ingrédients de chaque recette.
+Tout est enregistré dans le navigateur de l'appareil.
 
 ## Utiliser
-
-Ouvre `index.html` dans un navigateur. Pour l'avoir sur ton téléphone : active GitHub Pages
-(Settings → Pages → branche → dossier `/`), puis « Ajouter à l'écran d'accueil ».
+Ouvre `index.html` dans un navigateur, ou active GitHub Pages (Settings → Pages).
 
 ## Modifier
-
-Les produits (`PRODUITS`) et les recettes (`RECETTES`, quantités pour 1 personne) sont en haut du script dans `app.html`.
-`index.html` est la même page avec l'en-tête HTML complet.
+Tout est dans `app.html` : `MAGASINS`, `PRODUITS` (fonction `p(...)`), `RECETTES` (quantités pour 1 personne).
+Après une modification, lance `python3 build.py` pour régénérer `index.html`.
